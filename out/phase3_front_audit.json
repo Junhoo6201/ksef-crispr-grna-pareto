@@ -1,0 +1,27 @@
+{
+  "predicted": {
+    "front_size": 26,
+    "front_size_rank_transformed": 26,
+    "spearman": 0.06765652457772024,
+    "reference": {
+      "mean": 8.4,
+      "sd": 2.4440403706431146,
+      "min": 4,
+      "max": 14,
+      "n_rep": 30
+    }
+  },
+  "measured": {
+    "front_size": 11,
+    "front_size_rank_transformed": 11,
+    "spearman": 0.03239248557695594,
+    "reference": {
+      "mean": 8.7,
+      "sd": 2.5053276565484737,
+      "min": 4,
+      "max": 14,
+      "n_rep": 30
+    }
+  },
+  "independent_expectation_H_n": 9.170258168599675
+}

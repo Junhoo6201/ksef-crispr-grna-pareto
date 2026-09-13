@@ -1,0 +1,23 @@
+{
+  "n": 53937,
+  "n_pairs": 2694,
+  "n_components": 52903,
+  "bio_cols": [
+    "ddg_1",
+    "dg_open",
+    "dg_bind20",
+    "dg_bind7to20",
+    "gc_gt10",
+    "gc_lt10",
+    "gc_count",
+    "tm_global",
+    "tm2",
+    "tm3",
+    "dg_stem"
+  ],
+  "split_counts": {
+    "train": 43149,
+    "valid": 5394,
+    "test": 5394
+  }
+}

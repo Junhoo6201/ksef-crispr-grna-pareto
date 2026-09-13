@@ -1,0 +1,12 @@
+λ=0.0 | Spearman  eff -0.0580  fid +0.7011 | MSE eff 0.5965 fid 0.0186 | ep 33 |   330s
+λ=0.1 | Spearman  eff +0.8180  fid +0.7142 | MSE eff 0.0135 fid 0.0175 | ep 22 |   565s
+λ=0.2 | Spearman  eff +0.8397  fid +0.7140 | MSE eff 0.0116 fid 0.0174 | ep 33 |   885s
+λ=0.3 | Spearman  eff +0.8435  fid +0.7088 | MSE eff 0.0119 fid 0.0179 | ep 30 |  1197s
+λ=0.4 | Spearman  eff +0.8424  fid +0.7172 | MSE eff 0.0115 fid 0.0174 | ep 26 |  1462s
+λ=0.5 | Spearman  eff +0.8511  fid +0.7161 | MSE eff 0.0103 fid 0.0177 | ep 32 |  1779s
+λ=0.6 | Spearman  eff +0.8558  fid +0.7107 | MSE eff 0.0101 fid 0.0176 | ep 36 |  2156s
+λ=0.7 | Spearman  eff +0.8562  fid +0.7099 | MSE eff 0.0105 fid 0.0181 | ep 36 |  2517s
+λ=0.8 | Spearman  eff +0.8581  fid +0.7057 | MSE eff 0.0097 fid 0.0189 | ep 30 |  2819s
+λ=0.9 | Spearman  eff +0.8562  fid +0.6962 | MSE eff 0.0099 fid 0.0187 | ep 30 |  3136s
+λ=1.0 | Spearman  eff +0.8526  fid -0.2180 | MSE eff 0.0115 fid 0.3854 | ep 36 |  3518s
+[save] out/phase2_lambda_sweep.json, out/model_lam050.pt
