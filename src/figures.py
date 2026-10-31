@@ -29,6 +29,8 @@ plt.rcParams.update({
     "font.size": 9, "axes.titlesize": 10, "legend.frameon": False,
     "figure.facecolor": "#fcfcfb", "axes.facecolor": "#fcfcfb",
     "svg.hashsalt": "ksef-crispr",   # SVG 내부 id 를 고정 → 재현 가능
+    # 수학 기호는 mathtext 로 쓴다 — 본문 LaTeX 수식과 같은 이탤릭 세리프가 되게
+    "mathtext.fontset": "dejavuserif",
 })
 S1, S2, S3 = "#2a78d6", "#eb6834", "#1baf7a"
 INK, MUTED = "#0b0b0b", "#8a8985"
@@ -48,8 +50,11 @@ VECTOR = True   # True 면 PNG 외에 PDF·SVG 도 함께 저장 (후편집용 �
 META = {"pdf": {"CreationDate": None}, "svg": {"Date": None}}
 
 
-def save(fig, name):
-    fig.savefig(FIG / f"{name}.png", facecolor="#fcfcfb")
+def save(fig, name, dpi=None):
+    """dpi 를 주면 그 도판의 PNG 만 해당 해상도로 저장한다 (벡터는 무관).
+    기본값은 rcParams 의 200 dpi — 다른 도판의 산출을 바꾸지 않기 위해서다."""
+    fig.savefig(FIG / f"{name}.png", facecolor="#fcfcfb",
+                **({"dpi": dpi} if dpi else {}))
     if VECTOR:
         for ext in ("pdf", "svg"):
             fig.savefig(FIG / f"{name}.{ext}", facecolor="#fcfcfb", metadata=META[ext])
@@ -60,11 +65,14 @@ def save(fig, name):
 # --------------------------------------------------- Fig 1  측정값 분포와 상관
 def fig1(D):
     y1, y2 = D["y1"], D["y2"]
-    fig, ax = plt.subplots(1, 3, figsize=(10.4, 3.0), layout="constrained")
-    for a, v, c, t in [(ax[0], y1, S1, "Y₁  WT-SpCas9 편집효율"),
-                       (ax[1], y2, S2, "Y₂  HF1/WT 활성 유지율")]:
+    # 본문 그림 2 — 가로 170 mm 실치수 (기존 10.4 × 3.0 의 가로세로비 유지)
+    fig, ax = plt.subplots(1, 3, figsize=(6.693, 6.693 * 3.0 / 10.4),
+                           layout="constrained")
+    for a, v, c, t in [(ax[0], y1, S1, r"$Y_1$  WT-SpCas9 편집효율"),
+                       (ax[1], y2, S2, r"$Y_2$  HF1/WT 활성 유지율")]:
         a.hist(v, bins=60, color=c, edgecolor="none")
-        a.set_title(t, color=INK); a.set_xlabel("측정값"); a.set_ylabel("가이드 수")
+        a.set_title(t, color=INK, fontsize=9); a.set_xlabel("측정값", fontsize=8.5)
+        a.set_ylabel("가이드 수", fontsize=8.5); a.tick_params(labelsize=8)
         a.grid(axis="y"); a.set_axisbelow(True)
         top = a.get_ylim()[1]
         a.set_ylim(0, top * 1.14)
@@ -73,12 +81,16 @@ def fig1(D):
                    xytext=(5, 0), textcoords="offset points",
                    color=INK, fontsize=8, va="center")
     h = ax[2].hexbin(y1, y2, gridsize=45, cmap=SEQ, mincnt=1, linewidths=0)
-    ax[2].set_xlabel("Y₁ 편집효율"); ax[2].set_ylabel("Y₂ 활성 유지율")
+    ax[2].set_xlabel(r"$Y_1$ 편집효율", fontsize=8.5)
+    ax[2].set_ylabel(r"$Y_2$ 활성 유지율", fontsize=8.5); ax[2].tick_params(labelsize=8)
     r = np.corrcoef(y1, y2)[0, 1]
-    ax[2].set_title(f"두 목표의 결합분포  (Pearson r = {r:+.3f})", color=INK)
-    cb = fig.colorbar(h, ax=ax[2], pad=0.02); cb.set_label("가이드 수", color="#52514e")
+    # 170 mm 폭에서 원래 제목(「두 목표의 결합분포 (Pearson r = …)」)은 옆 패널 제목과 겹친다
+    ax[2].set_title(f"결합분포  (Pearson r = {r:+.3f})", color=INK, fontsize=9)
+    cb = fig.colorbar(h, ax=ax[2], pad=0.02)
+    cb.set_label("가이드 수", color="#52514e", fontsize=8.5)
+    cb.ax.tick_params(labelsize=8)
     cb.outline.set_visible(False)
-    save(fig, "fig1_distributions")
+    save(fig, "fig1_distributions", dpi=400)
 
 
 
@@ -111,7 +123,7 @@ def fig2(_unused=None):
     ax.errorbar(lam, f, yerr=fs, fmt="-o", color=S2, lw=2, ms=5,
                 capsize=3, elinewidth=1.2, label="Head B — 유지율 Y₂")
     # 2026-09-13 — 최댓값 라벨은 제거했다. λ 0.1–0.9 의 표본표준편차가 0.0022–0.0323 이라
-    # 최댓값은 이웃 λ 와 구분되지 않는다. 숫자로 강조하면 원고 3.2절(「λ 사이의 차이는
+    # 최댓값은 이웃 λ 와 구분되지 않는다. 숫자로 강조하면 원고 4.6절(「λ 사이의 차이는
     # 시드 잡음 수준」)과 그림이 충돌한다.
     # F5 — 논문이 채택한 λ 를 명시한다 (독자의 첫 질문이 "왜 0.5인가"이므로)
     j = lam.index(LAMBDA_ADOPTED)
@@ -214,8 +226,10 @@ def fig4(M, s4):
 # --------------------------------------------- Fig 5  in-silico mutagenesis
 def fig5(s4):
     ism = np.array(s4["ism_mean"])                            # (20,4,2)
-    fig, ax = plt.subplots(1, 2, figsize=(10.0, 3.3), layout="constrained")
-    titles = ["ΔŶ₁  편집효율 변화", "ΔŶ₂  활성 유지율 변화"]
+    # 본문 그림 5 — 가로 170 mm 실치수 (기존 10.0 × 3.3 의 가로세로비 유지)
+    fig, ax = plt.subplots(1, 2, figsize=(6.693, 6.693 * 3.3 / 10.0),
+                           layout="constrained")
+    titles = [r"$\Delta\hat{Y}_1$  편집효율 변화", r"$\Delta\hat{Y}_2$  활성 유지율 변화"]
     LW = 1.8
     BRACKET_PT = 7.0   # 모서리 ㄱ자 팔 길이 (pt) — 변 길이와 무관한 물리 길이
     marks = []
@@ -268,7 +282,7 @@ def fig5(s4):
                            solid_capstyle="butt", clip_on=False, zorder=5)
                 ax[k].plot(px, py, color="#fcfcfb", lw=LW, solid_joinstyle="miter",
                            solid_capstyle="butt", clip_on=False, zorder=6)
-    save(fig, "fig5_ism")
+    save(fig, "fig5_ism", dpi=400)
 
 
 # ------------------------------- Fig 6  사전 등록 비교 (직접 학습 vs 두 모델 비율)
@@ -428,7 +442,7 @@ def fig7(seed=20260830):
            f"{p_txt}\n"
            f"단, 실측 F₁ 진입은 26개 중 {int((r26 == 1).sum())}개")
     ax[1].annotate(txt, (0.03, 0.97), xycoords="axes fraction", va="top", ha="left",
-                   fontsize=7.5, color=INK,
+                   fontsize=8.0, color=INK,
                    bbox=dict(boxstyle="round,pad=0.35", fc="#fcfcfb", ec="#c9c8c2", lw=0.6))
     save(fig, "fig7_pareto_measured")
     return dict(median_rank_front=float(np.median(r26)), median_rank_all=float(np.median(rank)),
@@ -476,6 +490,15 @@ def fig8():
 
 # ------------------------------------- Fig 9  선별 전략 비교 (명세 §4-3, 표 6)
 def fig9(k=20):
+    """선별 전략 비교(V4). **10쪽판 원고에 포함되지 않는다.**
+    제외 사유는 분량이 아니다. 이 비교는 예측값으로 가이드를 고르므로
+    모델을 다시 학습하면 결과가 무너진다. 가중합 − 효율 단독의 측정 Y₂ 이득은
+    원 실행에서 +0.098(out/phase5_validation.json) 이었으나 사양을 기록한
+    환경에서 전 과정을 재실행하자 +0.010 으로 약 1/10 이 되었다.
+    같은 재실행에서 예측 전선은 26 → 20, 예측 기준 동시 만족 가이드는
+    587·87·0 → 565·121·7 로 바뀌었다. 반면 측정값만으로 계산되는 양은
+    한 자리도 움직이지 않았다. 코드는 기록으로 남긴다.
+    """
     pred, meas, y2v, f1 = load_points()
     p1, p2 = pred[:, 0], pred[:, 1]
     y1, y2 = meas[:, 0], meas[:, 1]
@@ -514,7 +537,7 @@ def fig9(k=20):
 def fig10():
     # 2026-09-13 — 점은 시드 5개 평균, 양방향 오차막대는 표본표준편차(ddof=1).
     # 「비지배 λ」 표기는 전부 제거했다. 일곱 번의 산출에서 일곱 개의 서로 다른
-    # 집합이 나왔고 공통 원소가 없어, 이 자료로 결정할 수 있는 양이 아니다 (4.7절).
+    # 집합이 나왔고 공통 원소가 없어, 이 자료로 결정할 수 있는 양이 아니다 (4.6절).
     lam, e, es, f, fs = seed_agg()
 
     fig, ax = plt.subplots(1, 2, figsize=(9.6, 4.0), layout="constrained")
@@ -548,7 +571,7 @@ def fig10():
             a_.annotate("λ = 0.1–0.9\n(오른쪽 패널에서 확대)",
                         (e[m_].mean(), f[m_].mean()),
                         xytext=(-58, -46), textcoords="offset points", ha="center",
-                        fontsize=7.5, color=INK,
+                        fontsize=8.0, color=INK,
                         arrowprops=dict(arrowstyle="-", color="#c9c8c2", lw=0.8),
                         bbox=dict(boxstyle="round,pad=0.3", fc="#fcfcfb", ec="#c9c8c2", lw=0.6))
         a_.set_xlabel("hold-out Spearman ρ  —  Y₁ 편집효율")
@@ -571,62 +594,183 @@ def fig10():
 # Nq² 는 두 목적이 완전 독립일 때의 기대값이라 실제 상관(+0.032 / +0.068)을 무시한다.
 # 번호 11 은 fig11_knee_k_sensitivity 가 쓰고 있어 12 로 둔다. 최종 번호는 원고 담당이 정한다.
 def fig12():
+    """본문 그림 3 — 결합 상위 q 동시충족의 귀무분포 대비 z.
+    (a) 전체 53,937 (측정값만 — 모델을 쓰지 않는 분석) / (b) 평가셋 5,394 (측정·예측).
+    세로축 범위가 두 규모에서 크게 다르므로 한 축에 겹치지 않고 패널을 나눈다(이중 축 금지).
+    가로 170 mm 실치수.
+    """
     src = ROOT / "data/phase3_qscan_null.json"
     if not src.exists():
         src = ROOT / "out/phase3_qscan_null.json"
     J = json.load(open(src, encoding="utf-8"))
+    srcF = ROOT / "data/qscan_fullsample.json"
+    if not srcF.exists():
+        srcF = ROOT / "out/qscan_fullsample.json"
+    F = json.load(open(srcF, encoding="utf-8"))
 
     def col(name, key):
         return np.array([r[key] for r in J["series"][name]["rows"]], float)
 
     q = col("measured", "q")
     zm, zp = col("measured", "z"), col("predicted", "z")
+    qf = np.array([r["q"] for r in F["rows"]], float)
+    zf = np.array([r["z"] for r in F["rows"]], float)
     band = J["sign_change"]["measured"]["z_crosses_zero_between"]   # [0.12, 0.10]
 
-    fig, ax = plt.subplots(figsize=(7.2, 4.6), layout="constrained")
-    ax.axvspan(max(band), min(band), color="#f0efec", zorder=0)
-    ax.axhline(0, color="#c9c8c2", lw=1.4, zorder=1)
-    for zz in (2, -2):
-        ax.axhline(zz, color="#e8e7e3", lw=1.0, ls=":", zorder=1)
-    ax.plot(q, zm, "-o", color=S1, lw=2, ms=5, zorder=4, label="측정값 기준")
-    ax.plot(q, zp, "-s", color=S2, lw=2, ms=5, zorder=3, label="예측값 기준")
+    fig, ax = plt.subplots(1, 2, figsize=(6.693, 3.70), layout="constrained")
+    TICKS = [0.30, 0.25, 0.20, 0.15, 0.10, 0.05]   # 13개 전부 쓰면 라벨이 겹친다
 
-    ax.set_xlim(0.315, 0.021)                       # 역방향 — 오른쪽이 극단
-    lo, hi = min(zm.min(), zp.min()), max(zm.max(), zp.max())
-    ax.set_ylim(lo - 1.6, hi + 1.8)
-    ticks = [0.30, 0.25, 0.20, 0.15, 0.12, 0.10, 0.08, 0.05, 0.03]
-    ax.set_xticks(ticks); ax.set_xticklabels([f"{v:.2f}" for v in ticks])
-    ax.set_xlabel("각 목적함수의 상위 분위 q   (오른쪽으로 갈수록 좁아짐)")
-    ax.set_ylabel("z   (귀무분포 대비 표준화 편차)")
-    ax.set_title("두 목적을 동시에 만족하는 가이드 수의 귀무분포 대비 편차", color=INK)
-    ax.grid(axis="y"); ax.set_axisbelow(True)
+    def frame(a_, ylo, yhi):
+        a_.axvspan(max(band), min(band), color="#f0efec", zorder=0)
+        a_.axhline(0, color="#c9c8c2", lw=1.4, zorder=1)
+        for zz in (2, -2):
+            a_.axhline(zz, color="#e8e7e3", lw=1.0, ls=":", zorder=1)
+        a_.set_xlim(0.315, 0.021)                   # 역방향 — 오른쪽이 극단
+        a_.set_ylim(ylo, yhi)
+        a_.set_xticks(TICKS); a_.set_xticklabels([f"{v:.2f}" for v in TICKS], fontsize=8)
+        a_.set_xlabel("상위 분위 q   (오른쪽이 극단)", fontsize=8.5)
+        a_.grid(axis="y"); a_.set_axisbelow(True)
+        a_.tick_params(labelsize=8)
 
-    ax.annotate("z = ±2", (0.024, 2.0), xytext=(0, 5), textcoords="offset points",
-                ha="right", fontsize=7.5, color="#52514e")
-    # 직접 라벨은 측정 곡선 세 지점만 (전 지점 라벨 금지)
-    for target, dy in ((0.15, -17), (0.10, -17), (0.05, 14)):   # 0.05 는 예측 곡선을 피해 위로
+    # --- (a) 전체 표본
+    frame(ax[0], -13.5, 20.5)
+    ax[0].set_yticks([-10, -5, 0, 5, 10, 15, 20])
+    ax[0].plot(qf, zf, "-o", color=S1, lw=1.8, ms=4, zorder=4, label="측정값 기준")
+    ax[0].set_ylabel("z   (귀무분포 대비 표준화 편차)", fontsize=8.5)
+    ax[0].set_title(f"(a) 전체 {F['n']:,}", fontsize=9, color=INK)
+    for target, dx, dy, ha in ((0.30, 2, 8, "left"), (0.25, 5, 5, "left"),
+                               (0.10, -5, 8, "right"), (0.05, 2, -15, "center")):
+        i = int(np.argmin(np.abs(qf - target)))
+        ax[0].annotate(f"{zf[i]:+.2f}", (qf[i], zf[i]), xytext=(dx, dy),
+                       textcoords="offset points", ha=ha, fontsize=8.0, color=S1)
+
+    # --- (b) 평가셋
+    frame(ax[1], -6.5, 16.8)
+    ax[1].set_yticks([-5, 0, 5, 10, 15])
+    ax[1].plot(q, zm, "-o", color=S1, lw=1.8, ms=4, zorder=4, label="측정값 기준")
+    ax[1].plot(q, zp, "-s", color=S2, lw=1.8, ms=4, zorder=3, label="예측값 기준")
+    ax[1].set_title(f"(b) 평가셋 {J['n']:,}", fontsize=9, color=INK)
+    for target, dx, dy, ha in ((0.15, -3, 7, "right"), (0.10, -4, -14, "right"),
+                               (0.05, 1, 10, "center")):
         i = int(np.argmin(np.abs(q - target)))
-        ax.annotate(f"z = {zm[i]:+.2f}", (q[i], zm[i]), xytext=(0, dy),
-                    textcoords="offset points", ha="center", fontsize=7.5, color=S1)
-    ax.annotate(f"측정 곡선이 z = 0 을\n지나는 구간  q = {max(band):.2f}–{min(band):.2f}",
-                (sum(band) / 2, ax.get_ylim()[1]), xytext=(0, -8),
-                textcoords="offset points", ha="center", va="top",
-                fontsize=7.5, color=INK,
-                bbox=dict(boxstyle="round,pad=0.28", fc="#fcfcfb", ec="#c9c8c2", lw=0.6))
-    ax.legend(loc="upper right", fontsize=8.5)
-    save(fig, "fig12_qscan")
+        ax[1].annotate(f"{zm[i]:+.2f}", (q[i], zm[i]), xytext=(dx, dy),
+                       textcoords="offset points", ha=ha, fontsize=8.0, color=S1)
+    ax[1].legend(loc="lower left", fontsize=8.0)
+
+    ax[0].annotate(f"z = 0 교차  q = {max(band):.2f}–{min(band):.2f}",
+                   (sum(band) / 2, 20.5), xytext=(0, -6), textcoords="offset points",
+                   ha="center", va="top", fontsize=8.0, color=INK)
+    for a_ in ax:
+        a_.annotate("z = ±2", (0.024, 2.0), xytext=(0, 3), textcoords="offset points",
+                    ha="right", fontsize=8.0, color="#52514e")
+
+    save(fig, "fig12_qscan", dpi=400)
     return dict(
         q=[float(v) for v in q],
         z_measured=[float(v) for v in zm], z_predicted=[float(v) for v in zp],
+        q_full=[float(v) for v in qf], z_full=[float(v) for v in zf],
         null_model=J["null_model"], reps=int(J["reps"]), seed=int(J["seed"]), n=int(J["n"]),
+        n_full=int(F["n"]),
         spearman={k: J["series"][k]["spearman"] for k in ("measured", "predicted")},
+        spearman_full=float(F["spearman"]),
         sign_change=J["sign_change"])
+
+
+# ------------------------- 본문 그림 4  비지배 전선 크기의 귀무분포와 관측값
+# 자료: out/phase3_front_null.json + out/front_null_hist.json (평가셋)
+#       out/front_null_fullsample.json (전체 표본)
+# 주장은 「전선 크기가 우연 범위 안인가」이므로 산점도·파레토 곡선은 넣지 않는다.
+# 관측은 1회이고 산포는 귀무분포의 것이므로 오차막대도 넣지 않는다.
+def fig_front_null():
+    def pick(name):
+        p = ROOT / f"data/{name}"
+        return p if p.exists() else ROOT / f"out/{name}"
+
+    E = json.load(open(pick("phase3_front_null.json"), encoding="utf-8"))
+    H = json.load(open(pick("front_null_hist.json"), encoding="utf-8"))
+    FS = json.load(open(pick("front_null_fullsample.json"), encoding="utf-8"))
+
+    fig, ax = plt.subplots(1, 2, figsize=(6.693, 3.25), layout="constrained")
+
+    def shape(a_, xhi, title):
+        a_.set_xlim(0, xhi); a_.set_xlabel("비지배 전선 크기 (가이드 수)", fontsize=8.5)
+        a_.grid(axis="y"); a_.set_axisbelow(True); a_.tick_params(labelsize=8)
+        a_.set_title(title, fontsize=9, color=INK)
+
+    # ---------- (a) 전체 53,937 ----------
+    c = np.array(FS["null_counts"], float)
+    x = np.arange(len(c)); k = c > 0
+    lo, hi = FS["tie_range"]
+    ax[0].axvspan(lo, hi, color="#f0efec", zorder=0)
+    ax[0].bar(x[k], c[k] / c.sum(), width=0.9, color="#cde2fb", edgecolor=S1,
+              linewidth=0.6, zorder=2)
+    ax[0].axvline(FS["independent_Hn"], color="#8a8985", lw=1.2, ls="--", zorder=3)
+    ax[0].axvline(FS["observed_avgrank"], color=S1, lw=2.2, zorder=4)
+    shape(ax[0], 35, f"(a) 전체 {FS['n']:,}")
+    ax[0].set_ylabel("귀무 2,000회 중 비율", fontsize=8.5)
+    ax[0].set_ylim(0, (c / c.sum()).max() * 1.34)          # 라벨 둘 자리
+    top = ax[0].get_ylim()[1]
+    BOX = dict(boxstyle="round,pad=0.28", fc="#fcfcfb", ec="#c9c8c2", lw=0.6)
+    ax[0].annotate(f"귀무 {FS['null_mean']:.2f} ± {FS['null_sd']:.2f}  ({FS['reps']:,}회)\n"
+                   "독립 $H_n$ = " + f"{FS['independent_Hn']:.2f}\n"
+                   f"p = {FS['p_avgrank']:.4f}  (최불리 {FS['p_tie_min']:.4f})",
+                   (0.98, 0.97), xycoords="axes fraction", ha="right", va="top",
+                   fontsize=8.0, color=INK, linespacing=1.5, bbox=BOX, zorder=6)
+    ax[0].annotate(f"관측 {FS['observed_avgrank']}", (FS["observed_avgrank"], top * 0.60),
+                   xytext=(4, 0), textcoords="offset points", ha="left", va="center",
+                   fontsize=8.0, color=S1, fontweight="bold")
+    ax[0].annotate(r"독립 $H_n$", (FS["independent_Hn"], top * 0.97),
+                   xytext=(-3, 0), textcoords="offset points", ha="right", va="top",
+                   fontsize=8.0, color="#52514e")
+    ax[0].annotate(f"동점 무작위 분리 {lo}–{hi}", ((lo + hi) / 2, top * 0.42),
+                   ha="center", va="center", fontsize=8.0, color="#52514e")
+
+    # ---------- (b) 평가셋 5,394 ----------
+    cm = np.array(H["null_counts"]["measured"], float)
+    cp = np.array(H["null_counts"]["predicted"], float)
+    cj = np.array(H["jitter_counts"]["1.00"], float)
+    xx = np.arange(len(cm))
+    ax[1].bar(xx, cm / cm.sum(), width=0.9, color="#cde2fb", edgecolor=S1, linewidth=0.6,
+              zorder=2, label="귀무 (측정 조건)")
+    ax[1].step(xx, cp / cp.sum(), where="mid", color=S2, lw=1.3, zorder=3,
+               label="귀무 (예측 조건)")
+    ax[1].step(xx, cj / cj.sum(), where="mid", color=MUTED, lw=1.3, ls=":", zorder=3,
+               label="예측값 + 잔차 1.00× 잡음")
+    shape(ax[1], 31, f"(b) 평가셋 {E['n']:,}")
+    ax[1].set_ylim(0, max((cm / cm.sum()).max(), (cp / cp.sum()).max()) * 1.34)
+    top1 = ax[1].get_ylim()[1]
+    for nm, col_, lab, fy, ha_ in (("measured", S1, "측정", 0.72, "left"),
+                                   ("predicted", S2, "예측", 0.97, "right")):
+        v = E["null"][nm]["observed"]
+        ax[1].axvline(v, color=col_, lw=2.2, zorder=4)
+        ax[1].annotate(f"{lab} 관측 {v}   z = {E['null'][nm]['z']:+.2f}",
+                       (v, top1 * fy), xytext=(4 if ha_ == "left" else -4, 0),
+                       textcoords="offset points", ha=ha_, va="top",
+                       fontsize=8.0, color=col_)
+    ax[1].legend(loc="lower right", fontsize=8.0, frameon=True, facecolor="#fcfcfb",
+                 edgecolor="#c9c8c2", framealpha=1.0, borderpad=0.4)
+
+    save(fig, "fig_front_null", dpi=400)
+    return dict(
+        full=dict(n=FS["n"], observed=FS["observed_avgrank"], tie_range=FS["tie_range"],
+                  null_mean=FS["null_mean"], null_sd=FS["null_sd"],
+                  p=FS["p_avgrank"], p_worst=FS["p_tie_min"], Hn=FS["independent_Hn"]),
+        eval=dict(n=E["n"], observed=E["observed"], null=E["null"],
+                  jitter=E["jitter"], Hn=E["independent_theory_Hn"]))
 
 
 # ------------------------------- Fig 11  무릎점 전략의 k 민감도
 # 자료: out/phase7_knee_k.json (src/phase7_knee_k.py 산출)
 # 2026-09-06 데이터 담당이 배포본 figures.py 에서 병합 — 원본과 동일한 코드
 def fig11(R):
+    """무릎점 k 민감도(phase7). **10쪽판 원고에 포함되지 않는다.**
+    V4(fig9)와 함께 빠졌다. V4 가 빠진 사유는 fig9 의 주석을 볼 것.
+    이 분석 자체의 결론은 따로 있다 — 구판 원고의 「무릎점은 효율 손실이
+    크다」는 전략의 성질이 아니라 k = 20(|F₁| = 26 의 77%) 설정의 산물이다.
+    무릎점 − 가중합의 측정 Y₂ 차는 k=5 −0.063 → k=26 +0.189 로 부호가 바뀐다.
+    반대로 가중합 − 효율 단독의 이득은 k 에 견고했다(네 k 모두 ΔY₂ > 0,
+    +0.0858 ~ +0.1547). 두 주장을 섞지 말 것.
+    """
     ks = R["k_values"]; NF = R["n_front_F1"]
     meth = ["eff", "sum", "knee"]                      # 슬롯 순서대로 고정
     lab = {"eff": "효율 단독", "sum": "가중합 (0.5Ŷ₁+0.5Ŷ₂)", "knee": "파레토 무릎점"}
@@ -645,10 +789,11 @@ def fig11(R):
         ax[j].set_ylabel(ylab); ax[j].set_title(ttl, color=INK)
         ax[j].grid(axis="y"); ax[j].set_axisbelow(True)
     ax[0].set_ylim(0.4, 1.0)
-    # k=20 (논문 4.3절이 쓴 값) 표시 — 색이 아니라 선+라벨로
+    # k=20 (구판 원고의 선별 전략 비교가 쓴 값. V4 와 함께 10쪽판에서 제외) 표시
+    #   — 색이 아니라 선+라벨로
     for j in (0, 1):
         ax[j].axvline(20, color="#c9c8c2", lw=1, ls=":", zorder=0)
-    ax[0].annotate("4.3절이 쓴 k = 20 (전선의 77%)", (20, 0.985), xytext=(-6, 0),
+    ax[0].annotate("k = 20 (전선의 77%)", (20, 0.985), xytext=(-6, 0),
                    textcoords="offset points", ha="right", va="top",
                    fontsize=7.5, color=MUTED)
 
@@ -670,6 +815,437 @@ def fig11(R):
 
 
 # ==================================================================
+# ------------------------------------------- 파이프라인 개요 (번호 미부여)
+# 연구 흐름 도식 — 가로 방향 플로차트. 본문 번호는 최종 조판에서 일괄 부여하므로
+# 파일명에 번호를 넣지 않는다. 상자 안 수치는 전부 out/*.json 에서 코드로 읽는다.
+BOX_FILL, BOX_EDGE = "#cde2fb", "#0b0b0b"      # 순차형 램프 1단계 / 검정 외곽선
+BOX_FILL_END = "#9ec5f4"                       # 순차형 램프 2단계 — 종착 상자
+BOX_FILL_SIDE = "#f0efec"                      # 발산형 중립 중점 — 보조(입출력) 상자
+PLW = 2.2      # 상자 테두리 굵기
+ALW = 2.0      # 화살표 굵기
+AMS = 15       # 화살촉 크기
+
+
+def _text_w(ax, t, fs, bold=False):
+    """글자열의 렌더 폭을 축 좌표로 잰다 (상자 폭을 손으로 정하지 않기 위함)."""
+    fig = ax.get_figure()
+    h = ax.text(0.5, 0.5, t, fontsize=fs, fontweight="bold" if bold else None)
+    fig.canvas.draw()
+    bb = h.get_window_extent(); h.remove()
+    inv = ax.transData.inverted()
+    (x0, _), (x1, _) = inv.transform([[bb.x0, bb.y0], [bb.x1, bb.y1]])
+    return x1 - x0
+
+
+def _box_w(ax, title, body="", ts=8.4, bs=7.2, padx=0.010):
+    """상자 안 가장 긴 줄에서 필요한 상자 폭을 구한다."""
+    w = _text_w(ax, title, ts, True)
+    for ln in (body.split("\n") if body else []):
+        w = max(w, _text_w(ax, ln, bs))
+    return w + 2 * padx
+
+
+def _row(ax, y, specs, x0, x1, min_gap=0.035):
+    """한 줄에 상자들을 왼쪽부터 배치한다. 폭은 글자에서 자동으로 구하고,
+    남는 자리를 같은 크기의 간격으로 나눈다. specs 는 _pbox 인자 dict 의 목록."""
+    ws = [_box_w(ax, sp["title"], sp.get("body", ""),
+                 sp.get("ts", 8.4), sp.get("bs", 7.2)) for sp in specs]
+    gap = max(min_gap, (x1 - x0 - sum(ws)) / max(1, len(specs) - 1))
+    out, x = [], x0
+    for sp, w in zip(specs, ws):
+        kw = {k: v for k, v in sp.items() if k not in ("title", "body")}
+        out.append(_pbox(ax, x + w / 2, y, w, sp["title"], sp.get("body", ""), **kw))
+        x += w + gap
+    return out
+
+
+def _pbox(ax, x, y, w, title, body="", h=None, fill=BOX_FILL, edge=BOX_EDGE,
+          ts=8.4, bs=7.2):
+    """중심 (x, y), 너비 w 의 둥근 상자. h 를 주지 않으면 글줄 수에서 자동으로 정한다
+    — 위아래 여백 + 제목 + 빈 줄 + 본문 줄수. 상자 경계를 dict 로 반환."""
+    from matplotlib.patches import FancyBboxPatch
+    ax_h_pt = ax.get_figure().get_size_inches()[1] * 72.0      # 축 높이 1.0 = 몇 pt 인가
+    pad = 8.0 / ax_h_pt
+    t_h = ts * 1.35 / ax_h_pt
+    blank = bs * 1.45 / ax_h_pt                                # 제목과 본문 사이 빈 줄
+    line = bs * 1.60 / ax_h_pt
+    n = len(body.split("\n")) if body else 0
+    if h is None:
+        h = pad * 2 + (t_h + blank + n * line if body else t_h)
+    ax.add_patch(FancyBboxPatch(
+        (x - w / 2, y - h / 2), w, h,
+        boxstyle="round,pad=0,rounding_size=0.008",
+        linewidth=PLW, edgecolor=edge, facecolor=fill, zorder=2))
+    if body:
+        ax.text(x, y + h / 2 - pad, title, ha="center", va="top",
+                fontsize=ts, fontweight="bold", color=INK, zorder=3)
+        ax.text(x, y + h / 2 - pad - t_h - blank, body, ha="center", va="top",
+                fontsize=bs, color=INK, linespacing=1.6, zorder=3)
+    else:
+        ax.text(x, y, title, ha="center", va="center",
+                fontsize=ts, fontweight="bold", color=INK, zorder=3)
+    return dict(x=x, y=y, w=w, h=h,
+                L=x - w / 2, R=x + w / 2, B=y - h / 2, T=y + h / 2)
+
+
+def _pline(ax, verts, lw=None, head=True):
+    """꺾은선 경로를 따라가는 화살표. head=False 면 화살촉 없이 선만 (합류선용)."""
+    from matplotlib.patches import FancyArrowPatch
+    from matplotlib.path import Path
+    path = Path(verts, [Path.MOVETO] + [Path.LINETO] * (len(verts) - 1))
+    ax.add_patch(FancyArrowPatch(
+        path=path, arrowstyle="-|>" if head else "-", mutation_scale=AMS,
+        linewidth=ALW if lw is None else lw,
+        color=INK, shrinkA=0, shrinkB=0, joinstyle="miter", zorder=1))
+
+
+def _pflow(ax, a, b, frac=0.5):
+    """a 오른변 → b 왼변. 높이가 다르면 두 상자 사이에서 한 번 꺾는다."""
+    if abs(a["y"] - b["y"]) < 1e-9:
+        _pline(ax, [(a["R"], a["y"]), (b["L"], b["y"])])
+    else:
+        xm = a["R"] + (b["L"] - a["R"]) * frac
+        _pline(ax, [(a["R"], a["y"]), (xm, a["y"]), (xm, b["y"]), (b["L"], b["y"])])
+
+
+def _brace(ax, x_tip, x_arm, y0, y1, lw=2.4):
+    """중괄호. x_tip 쪽으로 꼭지가 향하고 x_arm 쪽으로 두 팔이 벌어진다.
+    두 개의 3차 베지에(위·아래 반쪽)로 그린다 — 제어점을 두 반쪽의 중간 x 에 두어
+    세로 구간이 한 직선에 놓이게 한다."""
+    from matplotlib.path import Path
+    from matplotlib.patches import PathPatch
+    ym = (y0 + y1) / 2
+    xc = x_tip + (x_arm - x_tip) * 0.5
+    for ye in (y1, y0):
+        path = Path([(x_arm, ye), (xc, ye), (xc, ym), (x_tip, ym)],
+                    [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4])
+        ax.add_patch(PathPatch(path, facecolor="none", edgecolor=INK,
+                               linewidth=lw, capstyle="round", zorder=2))
+    return (x_tip, ym)
+
+
+def _brace_x(x_tip, x_arm, y0, y1, ys):
+    """중괄호 곡선 위의 x 좌표를 y 로 조회한다 (갈래 화살표를 괄호에 붙이기 위함).
+    _brace 와 같은 3차 베지에를 촘촘히 표본화해 보간한다."""
+    ym = (y0 + y1) / 2
+    xc = x_tip + (x_arm - x_tip) * 0.5
+    t = np.linspace(0, 1, 512)[:, None]
+    out = np.empty(len(ys), float)
+    for ye, sel in ((y1, np.asarray(ys) >= ym), (y0, np.asarray(ys) < ym)):
+        P = np.array([[x_arm, ye], [xc, ye], [xc, ym], [x_tip, ym]])
+        B = ((1 - t) ** 3 * P[0] + 3 * (1 - t) ** 2 * t * P[1]
+             + 3 * (1 - t) * t ** 2 * P[2] + t ** 3 * P[3])
+        bx, by = B[:, 0], B[:, 1]
+        o = np.argsort(by)
+        out[sel] = np.interp(np.asarray(ys)[sel], by[o], bx[o])
+    return out
+
+
+def _brace_fan(ax, heading, items, x_tip_l, x_arm_l, x_arm_r, x_tip_r, y_lo, y_hi,
+               fs=7.2, hs=8.4, x_txt=None):
+    """왼쪽 중괄호 → 항목별 화살표 → 오른쪽 중괄호. 예시 도식과 같은 형태.
+    갈래 화살표는 괄호 곡선에서 바로 출발한다. 반환값은 (들어오는 점, 나가는 점)."""
+    n = len(items)
+    pad = (y_hi - y_lo) * 0.08
+    ys = np.linspace(y_hi - pad, y_lo + pad, n)
+    x_txt = x_arm_l + 0.030 if x_txt is None else x_txt
+    ax.text((x_tip_l + x_tip_r) / 2, y_hi + 0.075, heading,
+            ha="center", va="bottom", fontsize=hs, fontweight="bold", color=INK)
+    p_in = _brace(ax, x_tip_l, x_arm_l, y_lo, y_hi)
+    p_out = _brace(ax, x_tip_r, x_arm_r, y_lo, y_hi)
+    xs = _brace_x(x_tip_l, x_arm_l, y_lo, y_hi, ys)
+    for y, x0, t in zip(ys, xs, items):
+        _pline(ax, [(x0, y), (x_txt - 0.006, y)])
+        ax.text(x_txt, y, t, ha="left", va="center", fontsize=fs, color=INK)
+    return p_in, p_out
+
+
+def fig_pipeline_overview():
+    """연구 흐름 도식 — 두 경로를 갈라놓은 2행 구조.
+
+    윗줄(굵은 선)은 실측값만으로 성립하는 핵심 판정 경로, 아랫줄(가는 선)은
+    모델을 거치는 보조 근거 경로다. 본문 폭 170 mm 실치수로 그리므로 조판해도
+    글자 크기가 그대로다 (도판 1 pt = 지면 1 pt). 상자 폭은 글자에서 자동 계산한다.
+    """
+    P1 = json.load(open(ROOT / "out/phase1_summary.json", encoding="utf-8"))
+    FD = json.load(open(ROOT / "out/figure_data.json", encoding="utf-8"))
+    QS = json.load(open(ROOT / "out/phase3_qscan_null.json", encoding="utf-8"))
+    SW = json.load(open(ROOT / "out/phase2_seed_sweep.json", encoding="utf-8"))
+    S6 = json.load(open(ROOT / "out/phase6_seed_sweep.json", encoding="utf-8"))
+    K7 = json.load(open(ROOT / "out/phase7_knee_k.json", encoding="utf-8"))
+
+    n_all = P1["n"]; tr = P1["split_counts"]["train"]; te = P1["split_counts"]["test"]
+    n_lam = len({r["lam"] for r in SW}); n_seed = len({r["seed"] for r in SW})
+    n_base = len(S6["seed_bases"])
+    f1 = FD["fig3_pareto"]["f1_size"]
+    ks = "·".join(str(k) for k in K7["k_values"])
+    M = QS["series"]["measured"]
+    rho = M["spearman"]; reps = QS["reps"]; n_q = len(QS["q_values"])
+    zof = {r["q"]: r["z"] for r in M["rows"]}
+    qa, qb = QS["sign_change"]["measured"]["z_crosses_zero_between"]
+    QHI, QLO = 0.25, 0.05                      # 판정 상자에 인용할 두 지점
+    z_hi, z_lo = zof[QHI], zof[QLO]
+
+    W_IN = 170 / 25.4                          # 본문 폭 실치수
+    fig, ax = plt.subplots(figsize=(W_IN, 4.60), layout="constrained")
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
+    ax.set_facecolor("#fcfcfb")
+    fig.canvas.draw()                          # 글자 폭 측정을 위해 먼저 그린다
+    TS, BS = 9.0, 8.0      # 지면에서 제목 9 pt · 본문 8 pt
+    BOLD, THIN = 3.0, 1.5                      # 핵심 경로 / 보조 경로 선 굵기
+    YA, YB = 0.832, 0.470                      # 윗줄 / 아랫줄 중심 높이
+
+    def note(x, y, t, ha="left", fs=7.4, color="#52514e", weight=None):
+        ax.text(x, y, t, ha=ha, va="bottom", fontsize=fs, color=color,
+                fontweight=weight, linespacing=1.5, zorder=3)
+
+    # ================= 윗줄 — 실측값만으로 성립하는 핵심 판정 경로 =================
+    a1, a2, a3, a4 = _row(ax, YA, [
+        dict(title="Phase 1 — 데이터", ts=TS, bs=BS,
+             body=f"Wang et al. 2019 보충자료\nn = {n_all:,} → 평가셋 {te:,}"),
+        dict(title="실측 Y₁ · Y₂", ts=TS, bs=BS, body="모델 미사용"),
+        dict(title=f"q-스캔 {n_q}점", ts=TS, bs=BS,
+             body=f"결합 상위 q 동시충족\ncopula 귀무 {reps:,}회"),
+        dict(title="★ 판정 근거", ts=TS, bs=BS, fill=BOX_FILL_END,
+             body=f"전역 Spearman ρ = {rho:+.3f} (거의 무상관)\n"
+                  f"z  {z_hi:+.2f} (q={QHI:.2f}) → {z_lo:+.2f} (q={QLO:.2f})\n"
+                  f"부호 전환 q ≈ {qa:.2f} – {qb:.2f}"),
+    ], x0=0.006, x1=0.994)
+
+    for u, v in ((a1, a2), (a2, a3), (a3, a4)):
+        _pline(ax, [(u["R"], YA), (v["L"], YA)], lw=BOLD)
+
+    # ================= 아랫줄 — 모델을 거치는 보조 근거 경로 =================
+    b1, = _row(ax, YB, [
+        dict(title="Phase 2 — 멀티태스크 CNN", ts=TS, bs=BS,
+             body=f"λ {n_lam} × 시드 {n_seed} = {n_lam * n_seed}개 모델\n"
+                  f"채택 λ = {LAMBDA_ADOPTED}"),
+    ], x0=0.006, x1=0.006)
+
+    fan = [f"Phase 3   파레토 전선 F₁ = {f1}개",
+           "Phase 4   saliency · ISM 20 위치 × 4 염기",
+           f"Phase 7   무릎점 k 민감도 (k = {ks})",
+           "Phase 5   외부·실측 검증 V1 · V2 · V4",
+           "Phase 6   V5 사전등록 기준선 (BASE/ST/MT)"]
+    x_txt = b1["R"] + 0.100
+    x_end = x_txt + max(_text_w(ax, t, BS) for t in fan)
+    ALW_SAVE = globals()["ALW"]; globals()["ALW"] = THIN
+    f_in, f_out = _brace_fan(
+        ax, "", fan, x_tip_l=b1["R"] + 0.040, x_arm_l=b1["R"] + 0.070,
+        x_arm_r=x_end + 0.012, x_tip_r=x_end + 0.042,
+        y_lo=0.268, y_hi=0.706, fs=BS, x_txt=x_txt)
+    globals()["ALW"] = ALW_SAVE
+
+    _pline(ax, [(b1["R"], YB), (f_in[0], YB)], lw=THIN)
+    _pline(ax, [(f_out[0], YB), (a4["x"], YB), (a4["x"], a4["B"])], lw=THIN)
+    note((f_out[0] + a4["x"]) / 2, YB + 0.016, "보조 근거", ha="center")
+
+    # Phase 1 의 같은 데이터가 모델 경로로도 내려간다
+    _pline(ax, [(a1["x"], a1["B"]), (b1["x"], b1["T"])], lw=THIN)
+    note(a1["x"] + 0.010, (a1["B"] + b1["T"]) / 2 - 0.010, f"학습 {tr:,}", ha="left")
+
+    # ================= 재현성 띠 =================
+    st_b = (f"시드 반복 — λ 스윕 {n_lam} × 시드 {n_seed} = {n_lam * n_seed}개 모델 · "
+            f"Phase 6 시드 베이스 {n_base}개\n"
+            f"결정성 대조 — 같은 시드로 조건 A ×2 / 조건 B ×2")
+    _pbox(ax, 0.500, 0.105, _box_w(ax, "재현성", st_b, ts=TS, bs=BS), "재현성", st_b,
+          fill=BOX_FILL_SIDE, ts=TS, bs=BS)
+
+    # ================= 범례 =================
+    note(0.006, 0.968, "굵은 선 — 모델을 거치지 않는 경로 (핵심 판정)",
+         fs=7.6, color=INK, weight="bold")
+    note(0.470, 0.968, "가는 선 — 모델을 거치는 경로 (보조 근거)", fs=7.6)
+
+    # 상자가 지면 밖으로 나가면 조용히 잘린 채 저장되므로 여기서 잡는다
+    fig.canvas.draw()
+    inv = ax.transData.inverted()
+    over = []
+    for pt in ax.patches:
+        if type(pt).__name__ != "FancyBboxPatch":
+            continue
+        bb = pt.get_window_extent()
+        (x0, y0), (x1, y1) = inv.transform([[bb.x0, bb.y0], [bb.x1, bb.y1]])
+        if x0 < -1e-6 or x1 > 1 + 1e-6 or y0 < -1e-6 or y1 > 1 + 1e-6:
+            over.append((round(x0, 3), round(x1, 3), round(y0, 3), round(y1, 3)))
+    if over:
+        raise SystemExit(f"[중단] 상자가 그림 밖으로 나감: {over}")
+
+    save(fig, "fig_pipeline_overview")
+
+
+# ============================ 본문 그림 1 — 연구 설계 개요 ============================
+# 명세: claude/도판-명세-그림1-파이프라인-2026-10-14.md
+# 누적 교정: 도판-교정-그림1-2026-10-14.md · …-3차-2026-10-14.md
+# 내용 갱신: 도판-지시-그림1코드화·기호통일-2026-10-28.md §2-2 (현행 원고 4장 기준)
+#
+# 명세의 규칙 셋을 그대로 지킨다 —
+#   (1) 결과를 넣지 않는다 (상관계수·z·성능·전선 크기·결론 문장 금지)
+#   (2) 상자 안에 그래프를 넣지 않는다
+#   (3) 상자마다 제목 + 3줄 이내 (상자 3만 측정값 경로 설명을 위해 5줄)
+# 측정값 경로는 굵은 선 + 진한 색, 예측값 경로는 가는 선 + 회색 — 색만으로 구분하지 않는다.
+G1_W_MM, G1_H_MM = 170.0, 148.0          # 조판본이 잡아 둔 자리
+G1_TS, G1_BS = 8.5, 8.0                  # 제목 / 본문 (지시서 하한 8 pt)
+G1_LS = 1.45                             # 행간
+G1_PAD, G1_TGAP = 4.0, 5.0               # 상자 안 위아래 여백 / 제목·본문 사이
+
+
+def _g1_h(lines, note=False, ts=G1_TS, bs=G1_BS):
+    """상자 높이를 pt 로 먼저 구한다 — 그림 높이를 내용에서 역산하기 위해서다."""
+    h = G1_PAD * 2 + ts * 1.35
+    if lines:
+        # 실제 렌더 높이는 (줄수-1)*행간 + 글자높이 — len(lines)*행간 은 과대평가다
+        h += G1_TGAP + ((len(lines) - 1) * G1_LS + 1.05) * bs
+    if note:
+        h += bs * G1_LS * 1.05
+    return h
+
+
+def _g1_box(ax, x, y_top, w, title, lines, fill, edge, lw, H, note=None,
+            ts=G1_TS, bs=G1_BS):
+    """왼쪽 위 모서리를 (x, y_top) 에 두고 상자를 그린다. y 는 축 좌표, H 는 축 높이(pt)."""
+    from matplotlib.patches import FancyBboxPatch
+    pad, tgap = G1_PAD / H, G1_TGAP / H
+    th, lh = ts * 1.35 / H, bs * G1_LS / H
+    h = _g1_h(lines, note is not None, ts, bs) / H
+    ax.add_patch(FancyBboxPatch((x, y_top - h), w, h,
+                                boxstyle="round,pad=0,rounding_size=0.006",
+                                linewidth=lw, edgecolor=edge, facecolor=fill, zorder=2))
+    ax.text(x + w / 2, y_top - pad, title, ha="center", va="top",
+            fontsize=ts, fontweight="bold", color=INK, zorder=3)
+    if lines:
+        ax.text(x + 0.012, y_top - pad - th - tgap, "\n".join(lines),
+                ha="left", va="top", fontsize=bs, color=INK,
+                linespacing=G1_LS, zorder=3)
+    if note:
+        ax.text(x + w / 2, y_top - h + pad, note, ha="center", va="bottom",
+                fontsize=bs, color="#52514e", style="italic", zorder=3)
+    return dict(L=x, R=x + w, T=y_top, B=y_top - h, x=x + w / 2)
+
+
+def _g1_arrow(ax, verts, lw, color, head=True):
+    from matplotlib.patches import FancyArrowPatch
+    from matplotlib.path import Path
+    path = Path(verts, [Path.MOVETO] + [Path.LINETO] * (len(verts) - 1))
+    ax.add_patch(FancyArrowPatch(path=path, arrowstyle="-|>" if head else "-",
+                                 mutation_scale=9 + 3 * (lw > 2), linewidth=lw,
+                                 color=color, shrinkA=0, shrinkB=0,
+                                 joinstyle="miter", zorder=1))
+
+
+# 상자 내용 — 명세의 문구에 누적 교정과 10-28 갱신을 반영한 것
+G1_B1 = ("데이터 수집", ["DeepHF 공개 데이터셋 (Wang et al. 2019)",
+                    "HEK293T 세포 · 합성 표적 라이브러리",
+                    "효소 3종 측정값 · 공통 20-mer 53,937개"])
+G1_B2 = ("목적함수 정의", [r"$Y_1$ — 절단 효율 (야생형)",
+                     r"$Y_2$ — 활성 유지율 (SpCas9-HF1 ÷ 야생형)",
+                     r"$Y_{2v}$ — eSpCas9(1.1), 검증 전용"])
+G1_B2_NOTE = "이후 단계에서 두 목적함수의 관계를 분석"
+G1_B3 = ("분위 스캔", ["상위 분위 q 0.30 → 0.03",
+                   "두 목적 동시 만족 가이드 수 집계",
+                   "전체 53,937 · 평가셋 5,394 두 규모",
+                   "가우시안 코퓰러 귀무분포와 대조",
+                   "해석해 교차확인 · 교란 4종 배제"])
+G1_CHAIN = [
+    ("데이터 분할", ["서열 유사 가이드를 한 덩어리로 (Hamming ≤ 3)",
+                 "학습 43,149 / 검증 5,394 / 평가 5,394"]),
+    ("멀티태스크 CNN 학습",
+     [r"20-mer 원핫 + 스칼라 11개 · 공유층 → 2개 head ($\hat{Y}_1$, $\hat{Y}_2$)",
+      # 예측값에 반드시 햇을 붙인다 — MSE(Y₁, Y₁) = 0 이라 햇이 없으면 식이 항등적으로 0이다
+      r"$L = \lambda \cdot \mathrm{MSE}(\hat{Y}_1,\, Y_1)"
+      r" + (1-\lambda) \cdot \mathrm{MSE}(\hat{Y}_2,\, Y_2)$",
+      "가중치 λ 0 → 1 스윕 (0.1 간격 11개)"]),
+    ("파레토 전선 산출", ["비지배 정렬 (동점은 평균순위)",
+                   "귀무분포 · 잡음 교란과 대조"]),
+    ("서열 해석", ["Saliency map", "가상 돌연변이 시뮬레이션"]),
+    ("독립 검증 — 네 가지를 나란히 수행",
+     [r"미학습 효소 eSpCas9 전이 ($Y_{2v}$) · 예측 → 원자료 대조",
+      "베이스라인 대조 · 사전 등록 대조"]),
+]
+G1_B9 = ("재현성 확인",
+         ["난수 시드 고정 · 시드 5개 반복 (산포는 표본표준편차, ddof = 1)",
+          "연산 결정성 on/off 대조 · 측정값 경로 재학습 영향 없음 / "
+          "예측값 경로 재학습 시 변동"])
+
+
+def fig0_study_design(height_mm=None):
+    """본문 그림 1 — 연구 설계 개요.
+
+    세로 길이를 내용에서 역산한다 (height_mm 을 주면 그 값으로 고정).
+    상자 안 수치는 데이터 규모뿐이며 분석 결과가 아니다 (명세 규칙 1).
+    """
+    MEAS, PRED = INK, "#8a8985"              # 측정값 경로 / 예측값 경로
+    LW_M, LW_P = 2.6, 1.2
+    F_COM, F_MEAS, F_PRED = "#fcfcfb", "#cde2fb", "#f0efec"
+    M, GAP_BR, GAP_ROW, GAP_CH, GAP_BAND = 6.0, 15.0, 17.0, 7.0, 12.0   # 모두 pt
+
+    # ---- 1단계 : 세로 길이를 pt 로 먼저 합산한다
+    h1 = max(_g1_h(G1_B1[1]), _g1_h(G1_B2[1], note=True))
+    h3 = _g1_h(G1_B3[1])
+    hc = [_g1_h(ls) for _, ls in G1_CHAIN]
+    h9 = _g1_h(G1_B9[1])
+    right = sum(hc) + GAP_CH * (len(hc) - 1)
+    H_pt = M + h1 + GAP_BR + GAP_ROW + max(h3, right) + GAP_BAND + h9 + M
+    if height_mm:
+        H_pt = height_mm / 25.4 * 72.0
+
+    fig, ax = plt.subplots(figsize=(G1_W_MM / 25.4, H_pt / 72.0), layout="constrained")
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
+    ax.set_facecolor("#fcfcfb")
+    Y = lambda pt: 1.0 - pt / H_pt           # pt(위에서부터) → 축 좌표
+
+    b1 = _g1_box(ax, 0.015, Y(M), 0.455, *G1_B1, F_COM, INK, 1.4, H_pt)
+    b2 = _g1_box(ax, 0.530, Y(M), 0.455, *G1_B2, F_COM, INK, 1.4, H_pt,
+                 note=G1_B2_NOTE)
+    _g1_arrow(ax, [(b1["R"], Y(M + h1 / 2)), (b2["L"], Y(M + h1 / 2))], 1.4, INK)
+
+    y_j = Y(M + h1 + GAP_BR)
+    y_row = Y(M + h1 + GAP_BR + GAP_ROW)
+    xm, xp = 0.185, 0.6975
+    _g1_arrow(ax, [(b2["x"], b2["B"]), (b2["x"], y_j)], 1.4, INK, head=False)
+    ax.text(b2["x"] - 0.012, y_j + 2.0 / H_pt, "모델을 거치는가", ha="right",
+            va="bottom", fontsize=G1_BS, color="#52514e")
+
+    _g1_arrow(ax, [(b2["x"], y_j), (xm, y_j), (xm, y_row)], LW_M, MEAS)
+    ax.text(0.40, y_j + 2.0 / H_pt, "측정값만 사용 — 신경망을 거치지 않음",
+            ha="center", va="bottom", fontsize=G1_BS, color=MEAS,
+            fontweight="bold")
+    b3 = _g1_box(ax, 0.015, y_row, 0.340, *G1_B3, F_MEAS, MEAS, 2.4, H_pt)
+
+    _g1_arrow(ax, [(b2["x"], y_j), (xp, y_j), (xp, y_row)], LW_P, PRED)
+    ax.text(xp + 0.008, (y_j + y_row) / 2, "신경망 예측값 사용", ha="left",
+            va="center", fontsize=G1_BS, color="#52514e")
+
+    RX, RW = 0.420, 0.565
+    top_pt = M + h1 + GAP_BR + GAP_ROW
+    boxes = []
+    for i, (t, ls) in enumerate(G1_CHAIN):
+        b = _g1_box(ax, RX, Y(top_pt), RW, t, ls, F_PRED, PRED, LW_P, H_pt)
+        boxes.append(b)
+        if i:
+            _g1_arrow(ax, [(b["x"], boxes[i - 1]["B"]), (b["x"], b["T"])], LW_P, PRED)
+        top_pt += hc[i] + GAP_CH
+
+    # 재현성 띠 — 두 경로에 걸친다. 특정 상자를 가리키는 화살표를 붙이지 않는다
+    y_band = Y(M + h1 + GAP_BR + GAP_ROW + max(h3, right) + GAP_BAND)
+    _g1_box(ax, 0.015, y_band, 0.970, *G1_B9, F_PRED, "#c9c8c2", 1.0, H_pt)
+
+    fig.canvas.draw()
+    inv = ax.transData.inverted()
+    over = []
+    for pt in ax.patches:
+        if type(pt).__name__ != "FancyBboxPatch":
+            continue
+        bb = pt.get_window_extent()
+        (x0, y0), (x1, y1) = inv.transform([[bb.x0, bb.y0], [bb.x1, bb.y1]])
+        if x0 < -1e-6 or x1 > 1 + 1e-6 or y0 < -1e-6 or y1 > 1 + 1e-6:
+            over.append((round(x0, 3), round(x1, 3), round(y0, 3), round(y1, 3)))
+    if over:
+        raise SystemExit(f"[중단] 상자가 그림 밖으로 나감: {over}")
+
+    save(fig, "fig0_study_design", dpi=400)
+    return dict(width_mm=G1_W_MM, height_mm=round(H_pt / 72.0 * 25.4, 1))
+
+
 if __name__ == "__main__":
     print("[figures]")
 
@@ -701,3 +1277,8 @@ if __name__ == "__main__":
     step("fig10", fig10)
     step("fig11", lambda: fig11(json.load(open(ROOT / "out/phase7_knee_k.json", encoding="utf-8"))))
     step("fig12", fig12)
+    step("front_null", fig_front_null)
+    step("fig0", fig0_study_design)
+
+    # --- 파이프라인 개요 (번호 없음)
+    step("pipeline", fig_pipeline_overview)

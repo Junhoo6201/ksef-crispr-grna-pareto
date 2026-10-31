@@ -12,7 +12,7 @@
 
 판정 (실행 전 고정)
   A1 ≠ A2 이고 B1 = B2  → 원인은 비결정적 GPU 커널 [확정]
-  A1 = A2               → 세션 안에서는 결정적. 4.7절이 관측한 세션 간 차이는
+  A1 = A2               → 세션 안에서는 결정적. 4.9절이 관측한 세션 간 차이는
                           다른 원인(드라이버 판본 등)이며 본 실험으로는 규명 못 함
   A1 ≠ A2 이고 B1 ≠ B2  → 결정적 설정으로도 안 잡힘. 원인 미상으로 기록
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         print(f"  A 차이: Δsp_eff {abs(a1['sp_eff']-a2['sp_eff']):.2e}  "
               f"Δsp_fid {abs(a1['sp_fid']-a2['sp_fid']):.2e}", flush=True)
     print(f"  → {v}", flush=True)
-    print(f"\n  (참고) 4.7절이 관측한 세션 간 차이: Δsp_eff 4.2e-03  Δsp_fid 3.3e-03", flush=True)
+    print(f"\n  (참고) 4.9절이 관측한 세션 간 차이: Δsp_eff 4.2e-03  Δsp_fid 3.3e-03", flush=True)
 
     json.dump(out, open(P2.ROOT / "out/determinism_check.json", "w"), indent=2, ensure_ascii=False)
     print("[save] out/determinism_check.json", flush=True)

@@ -1,0 +1,183 @@
+{
+  "n": 5394,
+  "seed": 20260906,
+  "reps_null": 2000,
+  "reps_jitter": 1000,
+  "observed": {
+    "predicted": 26,
+    "measured": 11,
+    "predicted_rank": 26,
+    "measured_rank": 11
+  },
+  "ties": {
+    "predicted": {
+      "Y1": {
+        "tied_groups": 2,
+        "tied_points": 4,
+        "max_tie": 2
+      },
+      "Y2": {
+        "tied_groups": 4,
+        "tied_points": 8,
+        "max_tie": 2
+      }
+    },
+    "measured": {
+      "Y1": {
+        "tied_groups": 12,
+        "tied_points": 24,
+        "max_tie": 2
+      },
+      "Y2": {
+        "tied_groups": 2,
+        "tied_points": 15,
+        "max_tie": 13
+      }
+    }
+  },
+  "null": {
+    "predicted": {
+      "spearman": 0.06765652457772024,
+      "copula_r": 0.0708349293097405,
+      "mean": 8.6175,
+      "sd": 2.721929131902509,
+      "se_of_mean": 0.060864185688710014,
+      "observed": 26,
+      "z": 6.386095727573331
+    },
+    "measured": {
+      "spearman": 0.03239248557695594,
+      "copula_r": 0.033919705271390196,
+      "mean": 8.831,
+      "sd": 2.7190321012786685,
+      "se_of_mean": 0.06079940611463195,
+      "observed": 11,
+      "z": 0.7977103319155348
+    }
+  },
+  "independent_theory_Hn": 9.170258168599675,
+  "residual_sd": {
+    "Y1": 0.10139563322443375,
+    "Y2": 0.13236968681177635
+  },
+  "jitter": {
+    "0.25": {
+      "mean": 19.831,
+      "sd": 3.4462030287426937
+    },
+    "0.50": {
+      "mean": 16.633,
+      "sd": 3.40527633341362
+    },
+    "1.00": {
+      "mean": 13.088,
+      "sd": 3.119613435666026
+    }
+  },
+  "qscan": [
+    {
+      "q": 0.3,
+      "expected": 485.46,
+      "measured": 596,
+      "measured_ratio": 1.2277015614056772,
+      "predicted": 750,
+      "predicted_ratio": 1.5449264615004326
+    },
+    {
+      "q": 0.25,
+      "expected": 337.125,
+      "measured": 423,
+      "measured_ratio": 1.2547274749721913,
+      "predicted": 587,
+      "predicted_ratio": 1.7411939191694474
+    },
+    {
+      "q": 0.2,
+      "expected": 215.76,
+      "measured": 273,
+      "measured_ratio": 1.2652947719688543,
+      "predicted": 409,
+      "predicted_ratio": 1.8956247682610308
+    },
+    {
+      "q": 0.15,
+      "expected": 121.365,
+      "measured": 155,
+      "measured_ratio": 1.277139208173691,
+      "predicted": 250,
+      "predicted_ratio": 2.0599019486672434
+    },
+    {
+      "q": 0.12,
+      "expected": 77.6736,
+      "measured": 86,
+      "measured_ratio": 1.1071972974086435,
+      "predicted": 159,
+      "predicted_ratio": 2.0470275614880733
+    },
+    {
+      "q": 0.1,
+      "expected": 53.94,
+      "measured": 55,
+      "measured_ratio": 1.0196514645902854,
+      "predicted": 87,
+      "predicted_ratio": 1.6129032258064517
+    },
+    {
+      "q": 0.09,
+      "expected": 43.691399999999994,
+      "measured": 39,
+      "measured_ratio": 0.8926241777558056,
+      "predicted": 61,
+      "predicted_ratio": 1.3961557652077985
+    },
+    {
+      "q": 0.08,
+      "expected": 34.5216,
+      "measured": 23,
+      "measured_ratio": 0.6662495365220615,
+      "predicted": 33,
+      "predicted_ratio": 0.9559232480533927
+    },
+    {
+      "q": 0.07,
+      "expected": 26.430600000000005,
+      "measured": 15,
+      "measured_ratio": 0.567524006265465,
+      "predicted": 16,
+      "predicted_ratio": 0.6053589400164959
+    },
+    {
+      "q": 0.06,
+      "expected": 19.4184,
+      "measured": 7,
+      "measured_ratio": 0.36048284101676764,
+      "predicted": 5,
+      "predicted_ratio": 0.2574877435834054
+    },
+    {
+      "q": 0.05,
+      "expected": 13.485,
+      "measured": 3,
+      "measured_ratio": 0.2224694104560623,
+      "predicted": 0,
+      "predicted_ratio": 0.0
+    },
+    {
+      "q": 0.04,
+      "expected": 8.6304,
+      "measured": 2,
+      "measured_ratio": 0.2317389692250649,
+      "predicted": 0,
+      "predicted_ratio": 0.0
+    },
+    {
+      "q": 0.03,
+      "expected": 4.8546,
+      "measured": 0,
+      "measured_ratio": 0.0,
+      "predicted": 0,
+      "predicted_ratio": 0.0
+    }
+  ]
+}
