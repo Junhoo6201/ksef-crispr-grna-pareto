@@ -2,7 +2,7 @@
  "n": 53937,
  "seed": 20260906,
  "reps": 2000,
- "observed_avgrank": 21,
+ "observed_avgrank": 17,
  "tie_range": [
   20,
   32
@@ -51,7 +51,9 @@
   0,
   0
  ],
- "p_avgrank": 0.003,
+ "p_avgrank": 0.049,
  "p_tie_min": 0.006,
- "independent_Hn": 11.472796912741655
+ "independent_Hn": 11.472796912741655,
+ "dominance": "weak: A≥B in both and > in at least one; ties kept as average ranks",
+ "counter": "front_exact (brute-force verified, 300/300)"
 }

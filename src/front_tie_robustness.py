@@ -14,9 +14,21 @@ for nm,v in [("Y1",Y1),("Y2",Y2)]:
     print(f"  {nm}: 고유값 {len(u):,}  동점에 묶인 관측 {int(c[c>1].sum()):,}  최대 동점군 {c.max()}")
 print(f"  Y2 상한 1.5 동점 {int((Y2>=1.5).sum())}")
 def front_hv(u,w):
-    o=np.argsort(-u,kind='mergesort'); us=u[o]; ws=w[o]
-    run=np.maximum.accumulate(ws)
-    keep=np.concatenate(([True],ws[1:]>run[:-1]))
+    """비지배 해집합 크기와 하이퍼볼륨.
+
+    2026-11-01 정정 — 종전 구현은 u 동점군 안에서 '나중에 오는 점에게 지배되는
+    점'을 전선에 남겼다. 안정 정렬이라 동점군 내부 순서가 원본 자료 순서에
+    좌우되므로, 집계값이 정의가 아니라 자료 배열 순서에 의존했다.
+    (전체 표본 측정값에서 21 → 17, p 0.0030 → 0.0490. 귀무분포는 연속표본이라
+     동점이 없어 바뀌지 않는다 — 도수·평균·sd 전부 종전 값과 일치.)
+    약지배 정의대로 집계한다: p 가 지배됨 ⇔ max{w: u'>u} >= w  또는
+    max{w: u'==u} > w. 무차별 대입과 300회 대조하여 불일치 0건 확인."""
+    o=np.argsort(-u,kind='mergesort'); us=u[o]; ws=w[o]; n=len(us)
+    starts=np.r_[0, np.flatnonzero(np.diff(us)!=0)+1]
+    gid=np.zeros(n,int); gid[starts[1:]]=1; gid=np.cumsum(gid)
+    m_eq=np.maximum.reduceat(ws,starts)
+    m_gt=np.r_[-np.inf, np.maximum.accumulate(m_eq)[:-1]]
+    keep=~((m_gt[gid]>=ws)|(m_eq[gid]>ws))
     fu=us[keep]; fw=ws[keep]; nxt=np.concatenate((fu[1:],[0.0]))
     return int(keep.sum()), float(np.sum((fu-nxt)*fw))
 a1=stats.rankdata(Y1)/N; a2=stats.rankdata(Y2)/N
